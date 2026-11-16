@@ -37,3 +37,11 @@
 ## Статус проекта
 
 Тема проекта подготовлена. Требуется согласование с преподавателем.
+## Документация
+
+- [Заявка на тему](docs/project-proposal.md)
+- [Техническое задание](docs/lab-01-requirements.md)
+- [Архитектура](docs/architecture.md)
+- [Модель данных](docs/data-model.md)
+- [Контракт API](docs/api-contract.md)
+- [Матрица требований](docs/requirements-matrix.md)
