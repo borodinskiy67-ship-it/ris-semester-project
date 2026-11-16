@@ -36,3 +36,8 @@ npm run dev
 ```sh
 npm run build
 ```
+## Запуск Backend (API)
+```bash
+cd backend
+dotnet restore
+dotnet run
