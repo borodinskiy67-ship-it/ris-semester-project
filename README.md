@@ -45,3 +45,8 @@
 - [Модель данных](docs/data-model.md)
 - [Контракт API](docs/api-contract.md)
 - [Матрица требований](docs/requirements-matrix.md)
+## Запуск клиента (Frontend)
+```bash
+cd frontend
+npm install
+npm run dev
