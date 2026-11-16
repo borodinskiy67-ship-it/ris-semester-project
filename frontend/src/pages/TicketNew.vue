@@ -1,110 +1,104 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { addItem } from '../ticketsStore.js'
+import { createTicket } from '../api/tickets.js'
 
-// Хук для перехода на другие страницы
 const router = useRouter()
 
-// Объект формы
 const form = ref({
   title: '',
   equipmentId: null,
   description: ''
 })
 
-// Объект для хранения текстов ошибок
-const errors = ref({
-  title: '',
-  equipmentId: '',
-  description: ''
-})
+const errors = ref({ title: '', equipmentId: '', description: '' })
+const isSubmitting = ref(false)
+const serverError = ref('')
 
-// Функция, которая вызывается при отправке формы
-function onCreate() {
-  // 1. Сбрасываем старые ошибки
+async function onCreate() {
+  if (isSubmitting.value) return // Защита от двойного клика
+
   errors.value = { title: '', equipmentId: '', description: '' }
+  serverError.value = ''
   let isValid = true
 
-  // 2. Проверяем тему (5-80 символов)
   const cleanTitle = form.value.title.trim()
   if (cleanTitle.length < 5 || cleanTitle.length > 80) {
     errors.value.title = 'Тема: от 5 до 80 символов'
     isValid = false
   }
 
-  // 3. Проверяем ID оборудования (целое число > 0)
   if (!Number.isInteger(form.value.equipmentId) || form.value.equipmentId <= 0) {
-    errors.value.equipmentId = 'ID оборудования: должно быть целое число больше 0'
+    errors.value.equipmentId = 'ID оборудования: целое число больше 0'
     isValid = false
   }
 
-  // 4. Проверяем описание (10-500 символов)
   const cleanDesc = form.value.description.trim()
   if (cleanDesc.length < 10 || cleanDesc.length > 500) {
     errors.value.description = 'Описание: от 10 до 500 символов'
     isValid = false
   }
 
-  // Если есть ошибки — останавливаемся, ничего не добавляем
   if (!isValid) return
 
-  // 5. Добавляем в общий массив
-  addItem(cleanTitle, form.value.equipmentId, cleanDesc)
-
-  // 6. Очищаем форму
-  form.value = { title: '', equipmentId: null, description: '' }
-
-  // 7. Переходим на страницу списка
-  router.push('/')
+  // Отправляем на сервер (или mock)
+  isSubmitting.value = true
+  try {
+    await createTicket({
+      title: cleanTitle,
+      equipmentId: form.value.equipmentId,
+      description: cleanDesc
+    })
+    
+    // Если успех — очищаем и идем на главную
+    form.value = { title: '', equipmentId: null, description: '' }
+    router.push('/')
+    
+  } catch (error) {
+    // Обработка разных ошибок
+    if (error.status === 400) {
+      serverError.value = 'Проверьте правильность заполнения полей.'
+    } else if (error.status === 500) {
+      serverError.value = 'Сервер не смог обработать запрос. Попробуйте позже.'
+    } else {
+      serverError.value = 'Нет связи с сервером. Проверьте подключение.'
+    }
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
 
 <template>
   <section class="content-card">
     <h2>Создание заявки</h2>
-    <!-- @submit.prevent не дает странице перезагружаться -->
+    
+    <div v-if="serverError" class="server-error">
+      {{ serverError }}
+    </div>
+
     <form @submit.prevent="onCreate" class="modern-form">
-      
-      <!-- Поле: Тема -->
       <div class="form-group">
         <label for="title">Тема (5-80 символов)</label>
-        <input 
-          id="title" 
-          v-model="form.title" 
-          placeholder="Например: Не включается монитор" 
-          autofocus 
-        />
-        <!-- Вывод ошибки, если она есть -->
+        <input id="title" v-model="form.title" placeholder="Например: Не включается монитор" autofocus />
         <span v-if="errors.title" class="error-msg">{{ errors.title }}</span>
       </div>
       
-      <!-- Поле: ID оборудования -->
       <div class="form-group">
         <label for="equipmentId">ID Оборудования</label>
-        <!-- v-model.number автоматически превращает введенный текст в число -->
-        <input 
-          id="equipmentId" 
-          v-model.number="form.equipmentId" 
-          type="number" 
-          placeholder="Например: 3" 
-        />
+        <input id="equipmentId" v-model.number="form.equipmentId" type="number" placeholder="Например: 3" />
         <span v-if="errors.equipmentId" class="error-msg">{{ errors.equipmentId }}</span>
       </div>
 
-      <!-- Поле: Описание -->
       <div class="form-group">
         <label for="description">Описание (10-500 символов)</label>
-        <textarea 
-          id="description" 
-          v-model="form.description" 
-          rows="4" 
-          placeholder="Опишите проблему подробнее..."
-        ></textarea>
+        <textarea id="description" v-model="form.description" rows="4" placeholder="Опишите проблему подробнее..."></textarea>
         <span v-if="errors.description" class="error-msg">{{ errors.description }}</span>
       </div>
 
-      <button type="submit" class="btn-primary">Создать заявку</button>
+      <button type="submit" class="btn-primary" :disabled="isSubmitting">
+        {{ isSubmitting ? 'Создаём...' : 'Создать заявку' }}
+      </button>
     </form>
   </section>
 </template>
@@ -118,14 +112,10 @@ function onCreate() {
 .form-group input, .form-group textarea { padding: 14px; border: 1px solid #cbd5e0; border-radius: 10px; font-size: 15px; font-family: inherit; background: #f8fafc; }
 .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #42b883; background: white; box-shadow: 0 0 0 4px rgba(66, 184, 131, 0.15); }
 
-/* Стили для красного текста ошибки */
-.error-msg { 
-  color: #e53e3e; 
-  font-size: 13px; 
-  margin-top: 6px; 
-  font-weight: 500;
-}
+.error-msg { color: #e53e3e; font-size: 13px; margin-top: 6px; font-weight: 500; }
+.server-error { background: #fed7d7; color: #c53030; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: 600; }
 
 .btn-primary { padding: 14px 24px; background: #42b883; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 10px; transition: all 0.2s; }
-.btn-primary:hover { background: #3aa876; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(66, 184, 131, 0.3); }
+.btn-primary:hover:not(:disabled) { background: #3aa876; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(66, 184, 131, 0.3); }
+.btn-primary:disabled { background: #a0aec0; cursor: not-allowed; }
 </style>
