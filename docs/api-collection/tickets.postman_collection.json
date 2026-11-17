@@ -1,0 +1,47 @@
+{
+	"info": {
+		"name": "Tickets API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Create Ticket (Success)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"Сломан принтер\",\n  \"equipmentId\": 2,\n  \"description\": \"Не печатает документы\"\n}",
+					"options": { "raw": { "language": "json" } }
+				},
+				"url": { "raw": "http://localhost:5000/api/tickets", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "tickets"] }
+			}
+		},
+		{
+			"name": "Create Ticket (400 Bad Request)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"abc\",\n  \"equipmentId\": 2,\n  \"description\": \"Short\"\n}",
+					"options": { "raw": { "language": "json" } }
+				},
+				"url": { "raw": "http://localhost:5000/api/tickets", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "tickets"] }
+			}
+		},
+		{
+			"name": "Update Status (409 Conflict)",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"status\": \"InProgress\"\n}",
+					"options": { "raw": { "language": "json" } }
+				},
+				"url": { "raw": "http://localhost:5000/api/tickets/1/status", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "tickets", "1", "status"] }
+			}
+		}
+	]
+}
